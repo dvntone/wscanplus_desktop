@@ -42,6 +42,7 @@ Audience: operator desktop companion for the Android scanner app
   - `npm run lint`
   - `npm audit --json`
 - `npm audit` is clean (`0` vulnerabilities) after upgrading `electron-builder` to `26.8.1`
+- adb workflow and Android beta-device notes are documented in `docs/ADB_WORKFLOW.md`
 
 ---
 
@@ -64,6 +65,8 @@ Audience: operator desktop companion for the Android scanner app
 - `@u4/adbkit` remains deferred because it is CJS-only
 - Tango ADB is the preferred future evaluation candidate
 - No scan orchestration UI, no live Android bridge, and no local web dashboard yet
+- Future desktop ADB implementation should start from the validated host-side command set in `docs/ADB_WORKFLOW.md`
+- Newer Pixel devices may run with Advanced Protection enabled and a built-in Linux terminal VM present; neither should be treated as edge-case-only
 
 ### Quality / architecture follow-ups
 
@@ -76,6 +79,7 @@ Audience: operator desktop companion for the Android scanner app
 ## Session handoff guidance
 
 - Start with `CLAUDE.md`, then this file
+- For Android bridge work, read `docs/ADB_WORKFLOW.md` before evaluating transport libraries
 - Prefer small PRs tied to a single issue
 - Keep changes traceable and avoid mixing dependency work with feature work
 - If a future audit flags vulnerabilities again, re-run `npm audit --json` **after** install has fully completed; do not trust results captured concurrently with package installation
