@@ -24,8 +24,32 @@ export function parseAdbDevices(output) {
         model: metadata.model ?? "",
         product: metadata.product ?? "",
         device: metadata.device ?? "",
+        companion: {
+          status: "unchecked",
+          packageName: "",
+        },
       };
     });
+}
+
+export function validateDeviceSelector(serial) {
+  return /^[A-Za-z0-9._:-]+$/.test(serial);
+}
+
+export function parseCompanionPackagePath(output, packageName) {
+  const trimmed = output.trim();
+
+  if (trimmed.includes(`package:${packageName}`)) {
+    return {
+      status: "installed",
+      packageName,
+    };
+  }
+
+  return {
+    status: "missing",
+    packageName,
+  };
 }
 
 export const PRELIGHT_CLASSIFICATIONS = {

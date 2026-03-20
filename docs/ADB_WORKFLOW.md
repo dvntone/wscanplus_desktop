@@ -29,6 +29,7 @@ adb -s <device-serial> shell getprop ro.build.version.codename
 ### Runtime permission state
 
 ```bash
+adb -s <device-serial> shell pm list packages com.wscanplus.app
 adb -s <device-serial> shell pm grant <package> android.permission.ACCESS_FINE_LOCATION
 adb -s <device-serial> shell pm grant <package> android.permission.ACCESS_COARSE_LOCATION
 adb -s <device-serial> shell pm grant <package> android.permission.NEARBY_WIFI_DEVICES

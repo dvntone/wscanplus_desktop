@@ -35,9 +35,11 @@ test("main process keeps hardened BrowserWindow defaults", () => {
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
   const {
     parseAdbDevices,
+    parseCompanionPackagePath,
     summarizePreflight,
     classifyPreflight,
     PRELIGHT_CLASSIFICATIONS,
+    validateDeviceSelector,
   } = await import("../src/adb-preflight.mjs");
   const devices = parseAdbDevices(`List of devices attached
 DEVICE123456\tdevice product:grail model:Pixel_10_Pro_XL device:grail
@@ -51,6 +53,10 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       model: "Pixel_10_Pro_XL",
       product: "grail",
       device: "grail",
+      companion: {
+        status: "unchecked",
+        packageName: "",
+      },
     },
     {
       serial: "UNAUTHORIZED1",
@@ -58,6 +64,10 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       model: "",
       product: "",
       device: "",
+      companion: {
+        status: "unchecked",
+        packageName: "",
+      },
     },
   ]);
 
@@ -115,5 +125,25 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       ok: true,
     }),
     PRELIGHT_CLASSIFICATIONS.noDevices,
+  );
+
+  assert.equal(validateDeviceSelector("DEVICE123456"), true);
+  assert.equal(validateDeviceSelector("device.serial-01"), true);
+  assert.equal(validateDeviceSelector("bad serial"), false);
+
+  assert.deepEqual(
+    parseCompanionPackagePath("package:com.wscanplus.app\n", "com.wscanplus.app"),
+    {
+      status: "installed",
+      packageName: "com.wscanplus.app",
+    },
+  );
+
+  assert.deepEqual(
+    parseCompanionPackagePath("", "com.wscanplus.app"),
+    {
+      status: "missing",
+      packageName: "com.wscanplus.app",
+    },
   );
 });
