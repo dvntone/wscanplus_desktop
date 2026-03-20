@@ -1,8 +1,55 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { summarizePreflight } from "./adb-preflight.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function runAdb(args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("adb", args, {
+      windowsHide: true,
+    });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(stdout);
+        return;
+      }
+
+      reject(new Error(stderr.trim() || `adb exited with code ${code}`));
+    });
+  });
+}
+
+ipcMain.handle("adb:preflight", async () => {
+  try {
+    await runAdb(["start-server"]);
+    const versionOutput = await runAdb(["version"]);
+    const devicesOutput = await runAdb(["devices", "-l"]);
+    return summarizePreflight(versionOutput, devicesOutput);
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "ADB preflight failed.",
+    };
+  }
+});
 
 function createWindow() {
   const win = new BrowserWindow({
