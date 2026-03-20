@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   PRELIGHT_CLASSIFICATIONS,
+  describeDeviceReadiness,
   parseCompanionPackagePath,
   parseCompanionVersionInfo,
   summarizePreflight,
@@ -49,19 +50,28 @@ async function attachCompanionStatus(devices) {
 
   for (const device of devices) {
     if (device.state !== "device") {
-      results.push(device);
+      results.push({
+        ...device,
+        readiness: describeDeviceReadiness(device),
+      });
       continue;
     }
 
     if (!validateDeviceSelector(device.serial)) {
+      const companion = {
+        status: "unknown",
+        packageName: COMPANION_PACKAGE,
+        versionName: "",
+        versionCode: "",
+      };
+
       results.push({
         ...device,
-        companion: {
-          status: "unknown",
-          packageName: COMPANION_PACKAGE,
-          versionName: "",
-          versionCode: "",
-        },
+        companion,
+        readiness: describeDeviceReadiness({
+          ...device,
+          companion,
+        }),
       });
       continue;
     }
@@ -85,6 +95,10 @@ async function attachCompanionStatus(devices) {
         results.push({
           ...device,
           companion,
+          readiness: describeDeviceReadiness({
+            ...device,
+            companion,
+          }),
         });
         continue;
       }
@@ -98,22 +112,34 @@ async function attachCompanionStatus(devices) {
         COMPANION_PACKAGE,
       ]);
 
+      const companionWithVersion = {
+        ...companion,
+        ...parseCompanionVersionInfo(dumpOutput),
+      };
+
       results.push({
         ...device,
-        companion: {
-          ...companion,
-          ...parseCompanionVersionInfo(dumpOutput),
-        },
+        companion: companionWithVersion,
+        readiness: describeDeviceReadiness({
+          ...device,
+          companion: companionWithVersion,
+        }),
       });
     } catch {
+      const companion = {
+        status: "unknown",
+        packageName: COMPANION_PACKAGE,
+        versionName: "",
+        versionCode: "",
+      };
+
       results.push({
         ...device,
-        companion: {
-          status: "unknown",
-          packageName: COMPANION_PACKAGE,
-          versionName: "",
-          versionCode: "",
-        },
+        companion,
+        readiness: describeDeviceReadiness({
+          ...device,
+          companion,
+        }),
       });
     }
   }

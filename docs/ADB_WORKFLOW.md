@@ -39,6 +39,13 @@ adb -s <device-serial> shell dumpsys package <package>
 adb -s <device-serial> shell cmd appops get <package>
 ```
 
+### Operator guidance states now surfaced in the desktop app
+
+- `unauthorized`: unlock the device, accept the USB debugging prompt, and only use "Always allow from this computer" on a private trusted host
+- `offline`: reconnect USB, confirm USB debugging is still enabled, then rerun preflight
+- `companion missing`: the device is authorized but `com.wscanplus.app` is not installed yet
+- `companion ready`: the device is authorized and companion package/version details were read successfully
+
 ### Device state checks
 
 ```bash

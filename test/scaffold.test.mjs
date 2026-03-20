@@ -35,6 +35,7 @@ test("main process keeps hardened BrowserWindow defaults", () => {
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
   const {
     parseAdbDevices,
+    describeDeviceReadiness,
     parseCompanionPackagePath,
     parseCompanionVersionInfo,
     summarizePreflight,
@@ -161,6 +162,46 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
     {
       versionName: "0.1.0",
       versionCode: "2",
+    },
+  );
+
+  assert.deepEqual(
+    describeDeviceReadiness({
+      state: "unauthorized",
+    }),
+    {
+      label: "Authorization required",
+      guidance:
+        "Unlock the device, accept the USB debugging prompt, and only use 'Always allow from this computer' on a private trusted desktop.",
+    },
+  );
+
+  assert.deepEqual(
+    describeDeviceReadiness({
+      state: "device",
+      companion: {
+        status: "missing",
+      },
+    }),
+    {
+      label: "Companion missing",
+      guidance:
+        "The device is authorized, but `com.wscanplus.app` is not installed yet. Install the companion app before later desktop checks.",
+    },
+  );
+
+  assert.deepEqual(
+    describeDeviceReadiness({
+      state: "device",
+      companion: {
+        status: "installed",
+        versionName: "0.1.0",
+      },
+    }),
+    {
+      label: "Companion ready",
+      guidance:
+        "The device is authorized and the Android companion is installed. Version 0.1.0 is present.",
     },
   );
 });
