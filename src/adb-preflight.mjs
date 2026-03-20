@@ -27,6 +27,8 @@ export function parseAdbDevices(output) {
         companion: {
           status: "unchecked",
           packageName: "",
+          versionName: "",
+          versionCode: "",
         },
       };
     });
@@ -43,12 +45,26 @@ export function parseCompanionPackagePath(output, packageName) {
     return {
       status: "installed",
       packageName,
+      versionName: "",
+      versionCode: "",
     };
   }
 
   return {
     status: "missing",
     packageName,
+    versionName: "",
+    versionCode: "",
+  };
+}
+
+export function parseCompanionVersionInfo(output) {
+  const versionNameMatch = output.match(/versionName=([^\r\n]+)/);
+  const versionCodeMatch = output.match(/versionCode=(\S+)/);
+
+  return {
+    versionName: versionNameMatch?.[1] ?? "",
+    versionCode: versionCodeMatch?.[1] ?? "",
   };
 }
 

@@ -29,6 +29,10 @@ function renderDevices(devices) {
 
     if (device.companion?.status && device.companion.status !== "unchecked") {
       parts.push(`companion=${device.companion.status}`);
+
+      if (device.companion.versionName) {
+        parts.push(`version=${device.companion.versionName}`);
+      }
     }
 
     item.textContent = parts.join(" | ");

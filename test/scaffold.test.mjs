@@ -36,6 +36,7 @@ test("adb preflight parser extracts state and metadata from adb devices output",
   const {
     parseAdbDevices,
     parseCompanionPackagePath,
+    parseCompanionVersionInfo,
     summarizePreflight,
     classifyPreflight,
     PRELIGHT_CLASSIFICATIONS,
@@ -56,6 +57,8 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       companion: {
         status: "unchecked",
         packageName: "",
+        versionName: "",
+        versionCode: "",
       },
     },
     {
@@ -67,6 +70,8 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       companion: {
         status: "unchecked",
         packageName: "",
+        versionName: "",
+        versionCode: "",
       },
     },
   ]);
@@ -136,6 +141,8 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
     {
       status: "installed",
       packageName: "com.wscanplus.app",
+      versionName: "",
+      versionCode: "",
     },
   );
 
@@ -144,6 +151,16 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
     {
       status: "missing",
       packageName: "com.wscanplus.app",
+      versionName: "",
+      versionCode: "",
+    },
+  );
+
+  assert.deepEqual(
+    parseCompanionVersionInfo("Packages:\n  Package [com.wscanplus.app] (1234):\n    versionCode=2 minSdk=24 targetSdk=36\n    versionName=0.1.0\n"),
+    {
+      versionName: "0.1.0",
+      versionCode: "2",
     },
   );
 });
