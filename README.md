@@ -8,6 +8,7 @@ Read these first when resuming work:
 
 - [CLAUDE.md](CLAUDE.md)
 - [docs/SESSION_STATE.md](docs/SESSION_STATE.md)
+- [docs/ADB_WORKFLOW.md](docs/ADB_WORKFLOW.md)
 
 ## Setup
 
