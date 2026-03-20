@@ -32,6 +32,7 @@ Audience: operator desktop companion for the Android scanner app
   - initial Electron scaffold
   - repo guardrails in `CLAUDE.md`
   - dependency/CI hardening from PR `#4`
+  - system-`adb` preflight UI for device detection / authorization checks
 - CI now runs:
   - `npm ci`
   - `npm test`
@@ -49,9 +50,11 @@ Audience: operator desktop companion for the Android scanner app
 ## Current file roles
 
 - `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults
-- `src/preload.mjs` — minimal preload bridge
-- `src/index.html` — static shell only
-- `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape and secure window defaults
+- `src/preload.mjs` — minimal preload bridge plus ADB preflight IPC surface
+- `src/index.html` — static shell with ADB preflight entry point
+- `src/adb-preflight.mjs` — pure parser/summarizer for `adb devices -l` output
+- `src/renderer.mjs` — minimal renderer for local ADB preflight feedback
+- `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape, secure window defaults, and ADB preflight parsing
 - `.github/workflows/ci.yml` — minimal CI gate for install, test, and lint
 - `CLAUDE.md` — repo-local agent rules and workflow constraints
 
@@ -65,6 +68,7 @@ Audience: operator desktop companion for the Android scanner app
 - `@u4/adbkit` remains deferred because it is CJS-only
 - Tango ADB is the preferred future evaluation candidate
 - No scan orchestration UI, no live Android bridge, and no local web dashboard yet
+- Current desktop ADB scope is limited to preflight only: no device selection, no install flow, no port forwarding, and no shell orchestration yet
 - Future desktop ADB implementation should start from the validated host-side command set in `docs/ADB_WORKFLOW.md`
 - Newer Pixel devices may run with Advanced Protection enabled and a built-in Linux terminal VM present; neither should be treated as edge-case-only
 
