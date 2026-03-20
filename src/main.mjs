@@ -14,6 +14,15 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const COMPANION_PACKAGE = "com.wscanplus.app";
 
+function unknownCompanion() {
+  return {
+    status: "unknown",
+    packageName: COMPANION_PACKAGE,
+    versionName: "",
+    versionCode: "",
+  };
+}
+
 function runAdb(args) {
   return new Promise((resolve, reject) => {
     const child = spawn("adb", args, {
@@ -58,12 +67,7 @@ async function attachCompanionStatus(devices) {
     }
 
     if (!validateDeviceSelector(device.serial)) {
-      const companion = {
-        status: "unknown",
-        packageName: COMPANION_PACKAGE,
-        versionName: "",
-        versionCode: "",
-      };
+      const companion = unknownCompanion();
 
       results.push({
         ...device,
@@ -126,12 +130,7 @@ async function attachCompanionStatus(devices) {
         }),
       });
     } catch {
-      const companion = {
-        status: "unknown",
-        packageName: COMPANION_PACKAGE,
-        versionName: "",
-        versionCode: "",
-      };
+      const companion = unknownCompanion();
 
       results.push({
         ...device,

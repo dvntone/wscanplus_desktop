@@ -140,6 +140,13 @@ Relevant implications for desktop bridge work:
 - sideloading and unsafe-install paths are intentionally more constrained
 - future desktop pairing/setup docs should assume the operator may need to unlock the device and explicitly trust the host before adb is usable
 
+## Trusted-host onboarding copy in the desktop app
+
+- The desktop preflight now reminds operators to trust only private, controlled hosts before accepting USB debugging.
+- `unauthorized` devices are explained as a host-trust step, not just a generic adb failure.
+- Authorized devices with a missing companion package are called out separately from transport failures.
+- This remains read-only guidance only; install and update execution are still deferred.
+
 This is not automatically hostile to adb-based testing, but it raises the baseline expectation that locked-state and trust-state matter more on newer Pixels.
 
 ## Linux terminal implications

@@ -73,6 +73,7 @@ export function parseCompanionVersionInfo(output) {
 }
 
 export function describeDeviceReadiness(device) {
+  const packageName = device.companion?.packageName || "the companion package";
   if (device.state === "unauthorized") {
     return {
       label: "Authorization required",
@@ -85,7 +86,7 @@ export function describeDeviceReadiness(device) {
     return {
       label: "Connection interrupted",
       guidance:
-        "Reconnect the USB cable, confirm USB debugging remains enabled, and rerun the preflight.",
+        "Reconnect the USB cable, confirm USB debugging is still enabled, and rerun the preflight.",
     };
   }
 
@@ -101,7 +102,7 @@ export function describeDeviceReadiness(device) {
     return {
       label: "Companion missing",
       guidance:
-        "The device is authorized, but `com.wscanplus.app` is not installed yet. Install the companion app before later desktop checks.",
+        `The device is authorized, but \`${packageName}\` is not installed yet. Install the companion app before later desktop checks.`,
     };
   }
 

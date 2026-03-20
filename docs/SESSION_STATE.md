@@ -36,7 +36,7 @@ Audience: operator desktop companion for the Android scanner app
   - readiness-state classification for missing adb, no devices, unauthorized devices, offline devices, and ready devices
   - companion-app install readiness check for authorized devices using `pm list packages com.wscanplus.app`
   - companion version readiness details for installed devices using package metadata
-  - per-device onboarding guidance for trusted-host authorization and companion readiness
+  - trusted-host onboarding copy and per-device next-step guidance in the desktop preflight UI
 - CI now runs:
   - `npm ci`
   - `npm test`
@@ -53,12 +53,11 @@ Audience: operator desktop companion for the Android scanner app
 
 ## Current file roles
 
-- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults
+- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults and read-only companion package/version inspection
 - `src/preload.mjs` — minimal preload bridge plus ADB preflight IPC surface
-- `src/index.html` — static shell with ADB preflight entry point
+- `src/index.html` — static shell with ADB preflight entry point and explicit trusted-host warning text for ADB onboarding
 - `src/adb-preflight.mjs` — pure parser/summarizer for `adb devices -l` output
 - `src/renderer.mjs` — minimal renderer for local ADB preflight feedback, operator guidance, and companion install state
-- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults and read-only companion package/version inspection
 - `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape, secure window defaults, and ADB preflight parsing
 - `.github/workflows/ci.yml` — minimal CI gate for install, test, and lint
 - `CLAUDE.md` — repo-local agent rules and workflow constraints
@@ -77,7 +76,8 @@ Audience: operator desktop companion for the Android scanner app
 - Current preflight guidance explicitly classifies: adb missing, no devices, unauthorized, offline, and ready
 - Current preflight also checks whether `com.wscanplus.app` is installed on authorized devices
 - Current preflight surfaces companion version details when the package is present
-- Current preflight also surfaces per-device next-step guidance for authorization and missing companion states
+- Current preflight now includes explicit trusted-host wording and per-device next-step guidance for common onboarding states
+- Current preflight now includes explicit trusted-host wording and per-device next-step guidance for common onboarding states
 - Future desktop ADB implementation should start from the validated host-side command set in `docs/ADB_WORKFLOW.md`
 - Newer Pixel devices may run with Advanced Protection enabled and a built-in Linux terminal VM present; neither should be treated as edge-case-only
 

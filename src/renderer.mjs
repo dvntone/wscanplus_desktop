@@ -1,5 +1,6 @@
 const statusElement = document.getElementById("status");
 const guidanceElement = document.getElementById("guidance");
+const trustedHostElement = document.getElementById("trusted-host");
 const runButton = document.getElementById("run-preflight");
 const deviceList = document.getElementById("device-list");
 
@@ -58,6 +59,8 @@ function renderDevices(devices) {
 async function runPreflight() {
   statusElement.textContent = "Running ADB preflight...";
   guidanceElement.textContent = "";
+  trustedHostElement.textContent =
+    "Only trust this desktop if it is private and under your control.";
   runButton.disabled = true;
   clearDeviceList();
 
