@@ -74,7 +74,6 @@ export function parseCompanionVersionInfo(output) {
 
 export function describeDeviceReadiness(device) {
   const packageName = device.companion?.packageName || "the companion package";
-
   if (device.state === "unauthorized") {
     return {
       label: "Authorization required",

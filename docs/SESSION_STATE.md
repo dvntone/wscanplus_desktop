@@ -77,6 +77,7 @@ Audience: operator desktop companion for the Android scanner app
 - Current preflight also checks whether `com.wscanplus.app` is installed on authorized devices
 - Current preflight surfaces companion version details when the package is present
 - Current preflight now includes explicit trusted-host wording and per-device next-step guidance for common onboarding states
+- Current preflight now includes explicit trusted-host wording and per-device next-step guidance for common onboarding states
 - Future desktop ADB implementation should start from the validated host-side command set in `docs/ADB_WORKFLOW.md`
 - Newer Pixel devices may run with Advanced Protection enabled and a built-in Linux terminal VM present; neither should be treated as edge-case-only
 
