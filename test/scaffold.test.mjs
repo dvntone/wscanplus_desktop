@@ -33,7 +33,12 @@ test("main process keeps hardened BrowserWindow defaults", () => {
 });
 
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
-  const { parseAdbDevices, summarizePreflight, classifyPreflight } = await import("../src/adb-preflight.mjs");
+  const {
+    parseAdbDevices,
+    summarizePreflight,
+    classifyPreflight,
+    PRELIGHT_CLASSIFICATIONS,
+  } = await import("../src/adb-preflight.mjs");
   const devices = parseAdbDevices(`List of devices attached
 DEVICE123456\tdevice product:grail model:Pixel_10_Pro_XL device:grail
 UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
@@ -71,12 +76,7 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       ok: true,
       devices: [{ state: "unauthorized" }],
     }),
-    {
-      level: "unauthorized",
-      title: "Device authorization required",
-      guidance:
-        "Unlock the device, accept the USB debugging prompt, and use 'Always allow from this computer' on trusted systems.",
-    },
+    PRELIGHT_CLASSIFICATIONS.unauthorized,
   );
 
   assert.deepEqual(
@@ -84,24 +84,14 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       ok: true,
       devices: [{ state: "offline" }],
     }),
-    {
-      level: "offline",
-      title: "ADB device offline",
-      guidance:
-        "Reconnect the USB cable, verify USB debugging stays enabled, and retry the preflight.",
-    },
+    PRELIGHT_CLASSIFICATIONS.offline,
   );
 
   assert.deepEqual(
     classifyPreflight({
       ok: false,
     }),
-    {
-      level: "adb-missing",
-      title: "ADB unavailable",
-      guidance:
-        "Install Android Platform Tools and ensure `adb` is on your PATH before continuing.",
-    },
+    PRELIGHT_CLASSIFICATIONS.adbMissing,
   );
 
   assert.deepEqual(
@@ -109,11 +99,21 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       ok: true,
       devices: [{ state: "device" }],
     }),
-    {
-      level: "ready",
-      title: "ADB ready",
-      guidance:
-        "At least one device is connected and authorized. The desktop can proceed to later companion checks.",
-    },
+    PRELIGHT_CLASSIFICATIONS.ready,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "recovery" }],
+    }),
+    PRELIGHT_CLASSIFICATIONS.notReady,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+    }),
+    PRELIGHT_CLASSIFICATIONS.noDevices,
   );
 });

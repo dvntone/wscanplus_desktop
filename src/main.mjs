@@ -2,7 +2,10 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { summarizePreflight } from "./adb-preflight.mjs";
+import {
+  PRELIGHT_CLASSIFICATIONS,
+  summarizePreflight,
+} from "./adb-preflight.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,18 +47,32 @@ ipcMain.handle("adb:preflight", async () => {
     const devicesOutput = await runAdb(["devices", "-l"]);
     return summarizePreflight(versionOutput, devicesOutput);
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "ADB preflight failed.";
     const failure = {
       ok: false,
-      error: error instanceof Error ? error.message : "ADB preflight failed.",
+      error: message,
+      rawError:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+              code: error.code,
+            }
+          : String(error),
     };
+    const isAdbMissing =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT";
+
     return {
       ...failure,
-      classification: {
-        level: "adb-missing",
-        title: "ADB unavailable",
-        guidance:
-          "Install Android Platform Tools and ensure `adb` is on your PATH before continuing.",
-      },
+      classification: isAdbMissing
+        ? PRELIGHT_CLASSIFICATIONS.adbMissing
+        : PRELIGHT_CLASSIFICATIONS.preflightFailed,
     };
   }
 });
