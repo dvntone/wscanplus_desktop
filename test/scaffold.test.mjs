@@ -39,8 +39,10 @@ test("renderer shell defines a restrictive CSP", () => {
   assert.match(htmlSource, /Content-Security-Policy/);
   assert.match(htmlSource, /default-src 'self'/);
   assert.match(htmlSource, /script-src 'self'/);
+  assert.match(htmlSource, /style-src 'self'/);
   assert.match(htmlSource, /object-src 'none'/);
   assert.match(htmlSource, /base-uri 'none'/);
+  assert.doesNotMatch(htmlSource, /style-src[^;]*'unsafe-inline'/);
 });
 
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
