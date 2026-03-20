@@ -34,7 +34,7 @@ Audience: operator desktop companion for the Android scanner app
   - dependency/CI hardening from PR `#4`
   - system-`adb` preflight UI for device detection / authorization checks
   - readiness-state classification for missing adb, no devices, unauthorized devices, offline devices, and ready devices
-  - companion-app install readiness check for authorized devices using `pm path com.wscanplus.app`
+  - companion-app install readiness check for authorized devices using `pm list packages com.wscanplus.app`
   - companion version readiness details for installed devices using package metadata
 - CI now runs:
   - `npm ci`

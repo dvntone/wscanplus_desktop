@@ -39,9 +39,13 @@ export function validateDeviceSelector(serial) {
 }
 
 export function parseCompanionPackagePath(output, packageName) {
-  const trimmed = output.trim();
+  const packageLine = `package:${packageName}`;
+  const lines = output
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
-  if (trimmed.includes(`package:${packageName}`)) {
+  if (lines.includes(packageLine)) {
     return {
       status: "installed",
       packageName,
