@@ -44,9 +44,18 @@ ipcMain.handle("adb:preflight", async () => {
     const devicesOutput = await runAdb(["devices", "-l"]);
     return summarizePreflight(versionOutput, devicesOutput);
   } catch (error) {
-    return {
+    const failure = {
       ok: false,
       error: error instanceof Error ? error.message : "ADB preflight failed.",
+    };
+    return {
+      ...failure,
+      classification: {
+        level: "adb-missing",
+        title: "ADB unavailable",
+        guidance:
+          "Install Android Platform Tools and ensure `adb` is on your PATH before continuing.",
+      },
     };
   }
 });

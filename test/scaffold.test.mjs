@@ -33,7 +33,7 @@ test("main process keeps hardened BrowserWindow defaults", () => {
 });
 
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
-  const { parseAdbDevices, summarizePreflight } = await import("../src/adb-preflight.mjs");
+  const { parseAdbDevices, summarizePreflight, classifyPreflight } = await import("../src/adb-preflight.mjs");
   const devices = parseAdbDevices(`List of devices attached
 DEVICE123456\tdevice product:grail model:Pixel_10_Pro_XL device:grail
 UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
@@ -64,4 +64,56 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
   assert.equal(summary.ok, true);
   assert.equal(summary.adbVersion, "Android Debug Bridge version 1.0.41");
   assert.deepEqual(summary.devices, []);
+  assert.equal(summary.classification.level, "no-devices");
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "unauthorized" }],
+    }),
+    {
+      level: "unauthorized",
+      title: "Device authorization required",
+      guidance:
+        "Unlock the device, accept the USB debugging prompt, and use 'Always allow from this computer' on trusted systems.",
+    },
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "offline" }],
+    }),
+    {
+      level: "offline",
+      title: "ADB device offline",
+      guidance:
+        "Reconnect the USB cable, verify USB debugging stays enabled, and retry the preflight.",
+    },
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: false,
+    }),
+    {
+      level: "adb-missing",
+      title: "ADB unavailable",
+      guidance:
+        "Install Android Platform Tools and ensure `adb` is on your PATH before continuing.",
+    },
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "device" }],
+    }),
+    {
+      level: "ready",
+      title: "ADB ready",
+      guidance:
+        "At least one device is connected and authorized. The desktop can proceed to later companion checks.",
+    },
+  );
 });
