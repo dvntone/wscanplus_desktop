@@ -72,6 +72,65 @@ export function parseCompanionVersionInfo(output) {
   };
 }
 
+export function describeDeviceReadiness(device) {
+  if (device.state === "unauthorized") {
+    return {
+      label: "Authorization required",
+      guidance:
+        "Unlock the device, accept the USB debugging prompt, and only use 'Always allow from this computer' on a private trusted desktop.",
+    };
+  }
+
+  if (device.state === "offline") {
+    return {
+      label: "Connection interrupted",
+      guidance:
+        "Reconnect the USB cable, confirm USB debugging is still enabled, and rerun the preflight.",
+    };
+  }
+
+  if (device.state !== "device") {
+    return {
+      label: "ADB not ready",
+      guidance:
+        "Bring the device into the Android OS with USB debugging enabled before continuing.",
+    };
+  }
+
+  if (device.companion?.status === "missing") {
+    return {
+      label: "Companion missing",
+      guidance:
+        "The device is authorized, but `com.wscanplus.app` is not installed yet. Install the companion app before later desktop checks.",
+    };
+  }
+
+  if (device.companion?.status === "installed") {
+    const versionSuffix = device.companion.versionName
+      ? ` Version ${device.companion.versionName} is present.`
+      : "";
+
+    return {
+      label: "Companion ready",
+      guidance: `The device is authorized and the Android companion is installed.${versionSuffix}`,
+    };
+  }
+
+  if (device.companion?.status === "unknown") {
+    return {
+      label: "Companion check incomplete",
+      guidance:
+        "The device is authorized, but the desktop could not confirm companion package details. Retry the preflight before moving on.",
+    };
+  }
+
+  return {
+    label: "Device ready",
+    guidance:
+      "The device is authorized. Continue with the next desktop onboarding step when available.",
+  };
+}
+
 export const PRELIGHT_CLASSIFICATIONS = {
   adbMissing: {
     level: "adb-missing",

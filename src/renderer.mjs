@@ -1,7 +1,14 @@
 const statusElement = document.getElementById("status");
 const guidanceElement = document.getElementById("guidance");
+const trustedHostElement = document.getElementById("trusted-host");
 const runButton = document.getElementById("run-preflight");
 const deviceList = document.getElementById("device-list");
+
+function appendDetail(item, content) {
+  const detail = document.createElement("div");
+  detail.textContent = content;
+  item.appendChild(detail);
+}
 
 function clearDeviceList() {
   while (deviceList.firstChild) {
@@ -35,7 +42,16 @@ function renderDevices(devices) {
       }
     }
 
-    item.textContent = parts.join(" | ");
+    appendDetail(item, parts.join(" | "));
+
+    if (device.readiness?.label) {
+      appendDetail(item, `next=${device.readiness.label}`);
+    }
+
+    if (device.readiness?.guidance) {
+      appendDetail(item, device.readiness.guidance);
+    }
+
     deviceList.appendChild(item);
   }
 }
@@ -43,6 +59,8 @@ function renderDevices(devices) {
 async function runPreflight() {
   statusElement.textContent = "Running ADB preflight...";
   guidanceElement.textContent = "";
+  trustedHostElement.textContent =
+    "Only trust this desktop if it is private and under your control.";
   runButton.disabled = true;
   clearDeviceList();
 
