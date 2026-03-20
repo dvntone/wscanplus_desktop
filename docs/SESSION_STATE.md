@@ -37,7 +37,7 @@ Audience: operator desktop companion for the Android scanner app
   - `npm test`
   - `npm run lint`
 - Local hardening verification on 2026-03-20:
-  - `npm install`
+  - `npm ci`
   - `npm test`
   - `npm run lint`
   - `npm audit --json`
