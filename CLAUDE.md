@@ -37,6 +37,12 @@ Linux-first Electron desktop companion for the wscan+ Android app.
 2. Make changes, commit
 3. Push: `git push -u origin <branch>`
 4. Open PR: `gh pr create ...`
-5. Wait for CI to pass
+5. Run `npm test` and `npm run lint`, then wait for CI to pass
 6. Merge: `gh pr merge --admin --squash`
 7. Sync: `git checkout main && git pull origin main`
+
+## Required checks before merge
+
+- `npm test`
+- `npm run lint`
+- `npm audit --json` when dependency changes are part of the PR
