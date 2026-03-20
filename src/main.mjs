@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   PRELIGHT_CLASSIFICATIONS,
   parseCompanionPackagePath,
+  parseCompanionVersionInfo,
   summarizePreflight,
   validateDeviceSelector,
 } from "./adb-preflight.mjs";
@@ -58,13 +59,15 @@ async function attachCompanionStatus(devices) {
         companion: {
           status: "unknown",
           packageName: COMPANION_PACKAGE,
+          versionName: "",
+          versionCode: "",
         },
       });
       continue;
     }
 
     try {
-      const output = await runAdb([
+      const packageOutput = await runAdb([
         "-s",
         device.serial,
         "shell",
@@ -73,10 +76,34 @@ async function attachCompanionStatus(devices) {
         "packages",
         COMPANION_PACKAGE,
       ]);
+      const companion = parseCompanionPackagePath(
+        packageOutput,
+        COMPANION_PACKAGE,
+      );
+
+      if (companion.status === "missing") {
+        results.push({
+          ...device,
+          companion,
+        });
+        continue;
+      }
+
+      const dumpOutput = await runAdb([
+        "-s",
+        device.serial,
+        "shell",
+        "dumpsys",
+        "package",
+        COMPANION_PACKAGE,
+      ]);
 
       results.push({
         ...device,
-        companion: parseCompanionPackagePath(output, COMPANION_PACKAGE),
+        companion: {
+          ...companion,
+          ...parseCompanionVersionInfo(dumpOutput),
+        },
       });
     } catch {
       results.push({
@@ -84,6 +111,8 @@ async function attachCompanionStatus(devices) {
         companion: {
           status: "unknown",
           packageName: COMPANION_PACKAGE,
+          versionName: "",
+          versionCode: "",
         },
       });
     }

@@ -27,6 +27,8 @@ export function parseAdbDevices(output) {
         companion: {
           status: "unchecked",
           packageName: "",
+          versionName: "",
+          versionCode: "",
         },
       };
     });
@@ -37,18 +39,36 @@ export function validateDeviceSelector(serial) {
 }
 
 export function parseCompanionPackagePath(output, packageName) {
-  const trimmed = output.trim();
+  const packageLine = `package:${packageName}`;
+  const lines = output
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
-  if (trimmed.includes(`package:${packageName}`)) {
+  if (lines.includes(packageLine)) {
     return {
       status: "installed",
       packageName,
+      versionName: "",
+      versionCode: "",
     };
   }
 
   return {
     status: "missing",
     packageName,
+    versionName: "",
+    versionCode: "",
+  };
+}
+
+export function parseCompanionVersionInfo(output) {
+  const versionNameMatch = output.match(/versionName=([^\r\n]+)/);
+  const versionCodeMatch = output.match(/versionCode=(\S+)/);
+
+  return {
+    versionName: versionNameMatch?.[1] ?? "",
+    versionCode: versionCodeMatch?.[1] ?? "",
   };
 }
 
