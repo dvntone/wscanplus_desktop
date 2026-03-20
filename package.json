@@ -1,0 +1,16 @@
+{
+  "name": "wscanplus-desktop",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "lint": "eslint src/",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "41.0.3",
+    "electron-builder": "26.0.12",
+    "eslint": "9.39.4"
+  }
+}
