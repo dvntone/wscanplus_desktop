@@ -27,9 +27,20 @@ test("main process keeps hardened BrowserWindow defaults", () => {
 
   assert.match(mainSource, /contextIsolation:\s*true/);
   assert.match(mainSource, /nodeIntegration:\s*false/);
+  assert.match(mainSource, /sandbox:\s*true/);
   assert.match(mainSource, /loadFile\(path\.join\(__dirname,\s*"index\.html"\)\)/);
   assert.match(mainSource, /spawn\("adb",\s*args/);
   assert.doesNotMatch(mainSource, /\bexec\(/);
+});
+
+test("renderer shell defines a restrictive CSP", () => {
+  const htmlSource = readText("src", "index.html");
+
+  assert.match(htmlSource, /Content-Security-Policy/);
+  assert.match(htmlSource, /default-src 'self'/);
+  assert.match(htmlSource, /script-src 'self'/);
+  assert.match(htmlSource, /object-src 'none'/);
+  assert.match(htmlSource, /base-uri 'none'/);
 });
 
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
