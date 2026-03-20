@@ -4,10 +4,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   PRELIGHT_CLASSIFICATIONS,
+  parseCompanionPackagePath,
   summarizePreflight,
+  validateDeviceSelector,
 } from "./adb-preflight.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const COMPANION_PACKAGE = "com.wscanplus.app";
 
 function runAdb(args) {
   return new Promise((resolve, reject) => {
@@ -40,12 +43,60 @@ function runAdb(args) {
   });
 }
 
+async function attachCompanionStatus(devices) {
+  return Promise.all(
+    devices.map(async (device) => {
+      if (device.state !== "device") {
+        return device;
+      }
+
+      if (!validateDeviceSelector(device.serial)) {
+        return {
+          ...device,
+          companion: {
+            status: "unknown",
+            packageName: COMPANION_PACKAGE,
+          },
+        };
+      }
+
+      try {
+        const output = await runAdb([
+          "-s",
+          device.serial,
+          "shell",
+          "pm",
+          "path",
+          COMPANION_PACKAGE,
+        ]);
+
+        return {
+          ...device,
+          companion: parseCompanionPackagePath(output, COMPANION_PACKAGE),
+        };
+      } catch {
+        return {
+          ...device,
+          companion: {
+            status: "unknown",
+            packageName: COMPANION_PACKAGE,
+          },
+        };
+      }
+    }),
+  );
+}
+
 ipcMain.handle("adb:preflight", async () => {
   try {
     await runAdb(["start-server"]);
     const versionOutput = await runAdb(["version"]);
     const devicesOutput = await runAdb(["devices", "-l"]);
-    return summarizePreflight(versionOutput, devicesOutput);
+    const summary = summarizePreflight(versionOutput, devicesOutput);
+    return {
+      ...summary,
+      devices: await attachCompanionStatus(summary.devices),
+    };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "ADB preflight failed.";

@@ -34,6 +34,7 @@ Audience: operator desktop companion for the Android scanner app
   - dependency/CI hardening from PR `#4`
   - system-`adb` preflight UI for device detection / authorization checks
   - readiness-state classification for missing adb, no devices, unauthorized devices, offline devices, and ready devices
+  - companion-app install readiness check for authorized devices using `pm path com.wscanplus.app`
 - CI now runs:
   - `npm ci`
   - `npm test`
@@ -54,7 +55,7 @@ Audience: operator desktop companion for the Android scanner app
 - `src/preload.mjs` — minimal preload bridge plus ADB preflight IPC surface
 - `src/index.html` — static shell with ADB preflight entry point
 - `src/adb-preflight.mjs` — pure parser/summarizer for `adb devices -l` output
-- `src/renderer.mjs` — minimal renderer for local ADB preflight feedback and operator guidance
+- `src/renderer.mjs` — minimal renderer for local ADB preflight feedback, operator guidance, and companion install state
 - `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape, secure window defaults, and ADB preflight parsing
 - `.github/workflows/ci.yml` — minimal CI gate for install, test, and lint
 - `CLAUDE.md` — repo-local agent rules and workflow constraints
@@ -71,6 +72,7 @@ Audience: operator desktop companion for the Android scanner app
 - No scan orchestration UI, no live Android bridge, and no local web dashboard yet
 - Current desktop ADB scope is limited to preflight only: no device selection, no install flow, no port forwarding, and no shell orchestration yet
 - Current preflight guidance explicitly classifies: adb missing, no devices, unauthorized, offline, and ready
+- Current preflight also checks whether `com.wscanplus.app` is installed on authorized devices
 - Future desktop ADB implementation should start from the validated host-side command set in `docs/ADB_WORKFLOW.md`
 - Newer Pixel devices may run with Advanced Protection enabled and a built-in Linux terminal VM present; neither should be treated as edge-case-only
 
