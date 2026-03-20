@@ -1,4 +1,5 @@
 const statusElement = document.getElementById("status");
+const guidanceElement = document.getElementById("guidance");
 const runButton = document.getElementById("run-preflight");
 const deviceList = document.getElementById("device-list");
 
@@ -33,23 +34,22 @@ function renderDevices(devices) {
 
 async function runPreflight() {
   statusElement.textContent = "Running ADB preflight...";
+  guidanceElement.textContent = "";
   runButton.disabled = true;
   clearDeviceList();
 
   try {
     const result = await window.wscan.runAdbPreflight();
+    const classification = result.classification;
 
     if (!result.ok) {
-      statusElement.textContent = result.error;
+      statusElement.textContent = classification.title;
+      guidanceElement.textContent = `${classification.guidance} ${result.error}`;
       return;
     }
 
-    if (result.devices.length === 0) {
-      statusElement.textContent = `${result.adbVersion} | No Android devices detected.`;
-      return;
-    }
-
-    statusElement.textContent = `${result.adbVersion} | ${result.devices.length} device(s) detected.`;
+    statusElement.textContent = `${result.adbVersion} | ${classification.title}`;
+    guidanceElement.textContent = classification.guidance;
     renderDevices(result.devices);
   } finally {
     runButton.disabled = false;

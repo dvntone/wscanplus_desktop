@@ -33,7 +33,12 @@ test("main process keeps hardened BrowserWindow defaults", () => {
 });
 
 test("adb preflight parser extracts state and metadata from adb devices output", async () => {
-  const { parseAdbDevices, summarizePreflight } = await import("../src/adb-preflight.mjs");
+  const {
+    parseAdbDevices,
+    summarizePreflight,
+    classifyPreflight,
+    PRELIGHT_CLASSIFICATIONS,
+  } = await import("../src/adb-preflight.mjs");
   const devices = parseAdbDevices(`List of devices attached
 DEVICE123456\tdevice product:grail model:Pixel_10_Pro_XL device:grail
 UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
@@ -64,4 +69,51 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
   assert.equal(summary.ok, true);
   assert.equal(summary.adbVersion, "Android Debug Bridge version 1.0.41");
   assert.deepEqual(summary.devices, []);
+  assert.equal(summary.classification.level, "no-devices");
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "unauthorized" }],
+    }),
+    PRELIGHT_CLASSIFICATIONS.unauthorized,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "offline" }],
+    }),
+    PRELIGHT_CLASSIFICATIONS.offline,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: false,
+    }),
+    PRELIGHT_CLASSIFICATIONS.adbMissing,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "device" }],
+    }),
+    PRELIGHT_CLASSIFICATIONS.ready,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+      devices: [{ state: "recovery" }],
+    }),
+    PRELIGHT_CLASSIFICATIONS.notReady,
+  );
+
+  assert.deepEqual(
+    classifyPreflight({
+      ok: true,
+    }),
+    PRELIGHT_CLASSIFICATIONS.noDevices,
+  );
 });
