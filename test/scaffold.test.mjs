@@ -181,6 +181,7 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
       state: "device",
       companion: {
         status: "missing",
+        packageName: "com.wscanplus.app",
       },
     }),
     {

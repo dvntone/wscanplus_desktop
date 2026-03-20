@@ -53,13 +53,11 @@ Audience: operator desktop companion for the Android scanner app
 
 ## Current file roles
 
-- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults
+- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults and read-only companion package/version inspection
 - `src/preload.mjs` — minimal preload bridge plus ADB preflight IPC surface
-- `src/index.html` — static shell with ADB preflight entry point
+- `src/index.html` — static shell with ADB preflight entry point and explicit trusted-host warning text for ADB onboarding
 - `src/adb-preflight.mjs` — pure parser/summarizer for `adb devices -l` output
 - `src/renderer.mjs` — minimal renderer for local ADB preflight feedback, operator guidance, and companion install state
-- `src/index.html` — static shell with explicit trusted-host warning text for ADB onboarding
-- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults and read-only companion package/version inspection
 - `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape, secure window defaults, and ADB preflight parsing
 - `.github/workflows/ci.yml` — minimal CI gate for install, test, and lint
 - `CLAUDE.md` — repo-local agent rules and workflow constraints
