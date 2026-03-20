@@ -37,6 +37,9 @@ Audience: operator desktop companion for the Android scanner app
   - companion-app install readiness check for authorized devices using `pm list packages com.wscanplus.app`
   - companion version readiness details for installed devices using package metadata
   - trusted-host onboarding copy and per-device next-step guidance in the desktop preflight UI
+  - explicit `sandbox: true` renderer hardening in the Electron shell
+  - restrictive CSP for the static renderer shell
+  - regression tests that enforce sandbox and CSP expectations
 - CI now runs:
   - `npm ci`
   - `npm test`
@@ -48,17 +51,20 @@ Audience: operator desktop companion for the Android scanner app
   - `npm audit --json`
 - `npm audit` is clean (`0` vulnerabilities) after upgrading `electron-builder` to `26.8.1`
 - adb workflow and Android beta-device notes are documented in `docs/ADB_WORKFLOW.md`
+- Follow-up hardening review note is documented in [docs/REVIEW_TRIAGE_2026-03-20.md](/Users/Devia/Documents/GitHub/wscanplus_desktop/docs/REVIEW_TRIAGE_2026-03-20.md)
+- Issue `#21` was resolved and closed on 2026-03-20 after PR `#22` merged
+- Companion Android repo `dvntone/wscanplus` merged PR `#148` on 2026-03-20; future desktop sync/map work can assume the Android app now has fused GPS sampling, persisted GPS-tagged scan rows, and Kismet `web GPS` upload on `main`
 
 ---
 
 ## Current file roles
 
-- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults and read-only companion package/version inspection
+- `src/main.mjs` — Electron main process with hardened `BrowserWindow` defaults, explicit sandboxing, and read-only companion package/version inspection
 - `src/preload.mjs` — minimal preload bridge plus ADB preflight IPC surface
-- `src/index.html` — static shell with ADB preflight entry point and explicit trusted-host warning text for ADB onboarding
+- `src/index.html` — static shell with ADB preflight entry point, explicit trusted-host warning text, and a restrictive CSP
 - `src/adb-preflight.mjs` — pure parser/summarizer for `adb devices -l` output
 - `src/renderer.mjs` — minimal renderer for local ADB preflight feedback, operator guidance, and companion install state
-- `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape, secure window defaults, and ADB preflight parsing
+- `test/scaffold.test.mjs` — baseline regression tests for ESM-only package shape, secure window defaults, restrictive CSP, and ADB preflight parsing
 - `.github/workflows/ci.yml` — minimal CI gate for install, test, and lint
 - `CLAUDE.md` — repo-local agent rules and workflow constraints
 
@@ -77,7 +83,6 @@ Audience: operator desktop companion for the Android scanner app
 - Current preflight also checks whether `com.wscanplus.app` is installed on authorized devices
 - Current preflight surfaces companion version details when the package is present
 - Current preflight now includes explicit trusted-host wording and per-device next-step guidance for common onboarding states
-- Current preflight now includes explicit trusted-host wording and per-device next-step guidance for common onboarding states
 - Future desktop ADB implementation should start from the validated host-side command set in `docs/ADB_WORKFLOW.md`
 - Newer Pixel devices may run with Advanced Protection enabled and a built-in Linux terminal VM present; neither should be treated as edge-case-only
 
@@ -86,6 +91,7 @@ Audience: operator desktop companion for the Android scanner app
 - Add Electron startup smoke coverage if the repo later adopts a GUI-capable CI strategy
 - Add packaging validation once desktop release targets are defined
 - Add docs for environment variables and runtime modes as real desktop features land
+- Keep [docs/REVIEW_TRIAGE_2026-03-20.md](/Users/Devia/Documents/GitHub/wscanplus_desktop/docs/REVIEW_TRIAGE_2026-03-20.md) as the record of the resolved hardening gap and future renderer-scope considerations
 
 ---
 
