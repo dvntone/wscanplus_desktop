@@ -132,7 +132,7 @@ UNAUTHORIZED1\tunauthorized usb:1-1 transport_id:3
   assert.equal(validateDeviceSelector("bad serial"), false);
 
   assert.deepEqual(
-    parseCompanionPackagePath("package:/data/app/~~abc/base.apk\n", "com.wscanplus.app"),
+    parseCompanionPackagePath("package:com.wscanplus.app\n", "com.wscanplus.app"),
     {
       status: "installed",
       packageName: "com.wscanplus.app",

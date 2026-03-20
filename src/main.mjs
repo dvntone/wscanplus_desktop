@@ -44,47 +44,52 @@ function runAdb(args) {
 }
 
 async function attachCompanionStatus(devices) {
-  return Promise.all(
-    devices.map(async (device) => {
-      if (device.state !== "device") {
-        return device;
-      }
+  const results = [];
 
-      if (!validateDeviceSelector(device.serial)) {
-        return {
-          ...device,
-          companion: {
-            status: "unknown",
-            packageName: COMPANION_PACKAGE,
-          },
-        };
-      }
+  for (const device of devices) {
+    if (device.state !== "device") {
+      results.push(device);
+      continue;
+    }
 
-      try {
-        const output = await runAdb([
-          "-s",
-          device.serial,
-          "shell",
-          "pm",
-          "path",
-          COMPANION_PACKAGE,
-        ]);
+    if (!validateDeviceSelector(device.serial)) {
+      results.push({
+        ...device,
+        companion: {
+          status: "unknown",
+          packageName: COMPANION_PACKAGE,
+        },
+      });
+      continue;
+    }
 
-        return {
-          ...device,
-          companion: parseCompanionPackagePath(output, COMPANION_PACKAGE),
-        };
-      } catch {
-        return {
-          ...device,
-          companion: {
-            status: "unknown",
-            packageName: COMPANION_PACKAGE,
-          },
-        };
-      }
-    }),
-  );
+    try {
+      const output = await runAdb([
+        "-s",
+        device.serial,
+        "shell",
+        "pm",
+        "list",
+        "packages",
+        COMPANION_PACKAGE,
+      ]);
+
+      results.push({
+        ...device,
+        companion: parseCompanionPackagePath(output, COMPANION_PACKAGE),
+      });
+    } catch {
+      results.push({
+        ...device,
+        companion: {
+          status: "unknown",
+          packageName: COMPANION_PACKAGE,
+        },
+      });
+    }
+  }
+
+  return results;
 }
 
 ipcMain.handle("adb:preflight", async () => {
