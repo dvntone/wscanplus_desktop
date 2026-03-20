@@ -3,6 +3,12 @@ const guidanceElement = document.getElementById("guidance");
 const runButton = document.getElementById("run-preflight");
 const deviceList = document.getElementById("device-list");
 
+function appendDetail(item, content) {
+  const detail = document.createElement("div");
+  detail.textContent = content;
+  item.appendChild(detail);
+}
+
 function clearDeviceList() {
   while (deviceList.firstChild) {
     deviceList.removeChild(deviceList.firstChild);
@@ -35,7 +41,16 @@ function renderDevices(devices) {
       }
     }
 
-    item.textContent = parts.join(" | ");
+    appendDetail(item, parts.join(" | "));
+
+    if (device.readiness?.label) {
+      appendDetail(item, `next=${device.readiness.label}`);
+    }
+
+    if (device.readiness?.guidance) {
+      appendDetail(item, device.readiness.guidance);
+    }
+
     deviceList.appendChild(item);
   }
 }
