@@ -1,4 +1,4 @@
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect } = React;
 
 // ─── OUI Threat Database (embedded — no network needed) ────────────────────
 const OUI_DB = {
@@ -251,7 +251,7 @@ function SweepTool() {
   const [findings, setFindings]     = useState([]);
   const [findingInput, setFindingInput] = useState("");
   const [copied, setCopied]         = useState(false);
-  const [sweepTime] = useState(new Date().toISOString().slice(0,19).replace("T"," "));
+  const [sweepTime, setSweepTime]   = useState(() => new Date().toISOString().slice(0,19).replace("T"," "));
 
   const toggleCheck = id => setChecks(c=>({...c,[id]:!c[id]}));
   const allVisual   = VISUAL_CHECKS.every(c=>checks[c.id]);
@@ -896,6 +896,7 @@ function SweepTool() {
           </button>
 
           <button onClick={() => {
+            setSweepTime(new Date().toISOString().slice(0,19).replace("T"," "));
             setPhase(0);
             setChecks({});
             setIrResult(null);
@@ -907,8 +908,8 @@ function SweepTool() {
               { label: "POSITION CHARLIE", rssi: "", note: "" },
             ]);
             setFindings([]);
-            setDevInput("");
-            setBleInput("");
+            setDevInput({ name:"", mac:"", rssi:"" });
+            setBleInput({ name:"", mac:"" });
             setFindingInput("");
             setCopied(false);
           }} style={{...S.btnDim,width:"100%"}}>
@@ -924,3 +925,6 @@ function SweepTool() {
     </div>
   );
 }
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<SweepTool />);
