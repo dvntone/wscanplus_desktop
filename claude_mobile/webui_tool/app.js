@@ -347,10 +347,21 @@ function SweepTool() {
   };
 
   const copyReport = () => {
-    navigator.clipboard.writeText(buildReport()).then(()=>{
-      setCopied(true);
-      setTimeout(()=>setCopied(false),2000);
-    });
+    if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+      console.error("Clipboard API is not available in this environment.");
+      window.alert("Copy failed: your browser does not support automatic copying. Please select and copy the report manually.");
+      return;
+    }
+    navigator.clipboard.writeText(buildReport())
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy report to clipboard:", err);
+        setCopied(false);
+        window.alert("Copy failed. Please select and copy the report text manually.");
+      });
   };
 
   // ── Styles ─────────────────────────────────────────────────────────────
