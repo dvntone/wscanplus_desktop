@@ -10,7 +10,7 @@ Static browser build of the SweepTool UI.
 
 ## Files
 - `index.html` – bootstraps React from CDN
-- `app.js` – SweepTool component and render call
+- `app.js` – SweepTool React component
 
 ## Notes
 - Clipboard works best on HTTPS-hosted pages
