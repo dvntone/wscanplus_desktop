@@ -235,7 +235,7 @@ function RssiBar({ value }) {
 }
 
 // ─── Main component ────────────────────────────────────────────────────────
-export default function SweepTool() {
+function SweepTool() {
   const [phase, setPhase]           = useState(0);
   const [checks, setChecks]         = useState({});
   const [irResult, setIrResult]     = useState(null);
