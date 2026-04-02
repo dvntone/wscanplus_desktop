@@ -10,9 +10,20 @@ import {
   summarizePreflight,
   validateDeviceSelector,
 } from "./adb-preflight.mjs";
+import { store } from "./store.mjs";
+import {
+  startScanning,
+  stopScanning,
+  executeScanCycle,
+  detectInterfaces,
+} from "./scanner.mjs";
+import { CompanionServer } from "./companion-server.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const COMPANION_PACKAGE = "com.wscanplus.app";
+const COMPANION_PORT = parseInt(process.env.COMPANION_PORT ?? "47392", 10);
+
+// --- ADB helpers (unchanged) ---
 
 function unknownCompanion() {
   return {
@@ -146,6 +157,8 @@ async function attachCompanionStatus(devices) {
   return results;
 }
 
+// --- IPC: ADB preflight (unchanged) ---
+
 ipcMain.handle("adb:preflight", async () => {
   try {
     await runAdb(["start-server"]);
@@ -187,8 +200,130 @@ ipcMain.handle("adb:preflight", async () => {
   }
 });
 
+// --- IPC: Scanner ---
+
+ipcMain.handle("scan:start", async (_, iface) => {
+  try {
+    await startScanning(iface || undefined);
+    return { ok: true, interface: store.state.interface };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+});
+
+ipcMain.handle("scan:stop", () => {
+  stopScanning();
+  return { ok: true };
+});
+
+ipcMain.handle("scan:manual", async () => {
+  try {
+    const aps = await executeScanCycle();
+    return { ok: true, count: aps.length };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+});
+
+ipcMain.handle("scan:state", () => ({
+  scanning: store.state.scanning,
+  interface: store.state.interface,
+  scanIntervalMs: store.state.scanIntervalMs,
+  apCount: store.state.aps.size,
+  riskCount: store.state.riskLog.length,
+}));
+
+ipcMain.handle("scan:interfaces", async () => {
+  try {
+    const interfaces = await detectInterfaces();
+    return { ok: true, interfaces };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      interfaces: [],
+    };
+  }
+});
+
+// --- IPC: Companion ---
+
+let companionServer = null;
+
+ipcMain.handle("companion:pair", async () => {
+  if (!companionServer) {
+    companionServer = new CompanionServer({
+      onData: (payload) => {
+        if (Array.isArray(payload.networks) && payload.networks.length > 0) {
+          const normalized = payload.networks.map((n) => ({
+            bssid: String(n.bssid ?? "").toLowerCase(),
+            ssid: String(n.ssid ?? ""),
+            signal: Number(n.rssi ?? n.signal ?? -100),
+            frequency: Number(n.frequency ?? 0),
+            channel: Number(n.channel ?? 0),
+            security: String(n.security ?? "open"),
+            source: "android",
+            deviceId: payload.deviceId,
+          }));
+          store.addAps(normalized);
+        }
+        pushToRenderer("companion:update", {
+          deviceId: payload.deviceId,
+          timestamp: payload.timestamp,
+          networkCount: payload.networks?.length ?? 0,
+        });
+      },
+    });
+  }
+
+  const token = companionServer.generateToken();
+
+  try {
+    const addr = await companionServer.start(COMPANION_PORT);
+    return { ok: true, token, address: addr };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+});
+
+ipcMain.handle("companion:status", () => ({
+  running: companionServer?.address() !== null,
+  address: companionServer?.address() ?? null,
+  token: companionServer?.token ?? null,
+}));
+
+// --- Window & store → renderer event bridge ---
+
+let mainWindow = null;
+
+function pushToRenderer(channel, data) {
+  if (mainWindow?.webContents?.isDestroyed() === false) {
+    mainWindow.webContents.send(channel, data);
+  }
+}
+
+store.on("aps", (aps) => pushToRenderer("scan:aps", aps));
+store.on("riskLog", (log) => pushToRenderer("scan:risklog", log));
+store.on("change", (state) =>
+  pushToRenderer("scan:statechange", {
+    scanning: state.scanning,
+    interface: state.interface,
+    scanIntervalMs: state.scanIntervalMs,
+  }),
+);
+store.on("appError", (entry) => pushToRenderer("app:error", entry));
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -199,12 +334,18 @@ function createWindow() {
     },
   });
 
-  win.loadFile(path.join(__dirname, "index.html"));
+  mainWindow.loadFile(path.join(__dirname, "index.html"));
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
+  stopScanning();
+  companionServer?.stop().catch(() => {});
   if (process.platform !== "darwin") {
     app.quit();
   }
