@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld("wscan", {
 
   /** Fired after each scan cycle with the full AP array. */
   onAps: (callback) => {
+    if (typeof callback !== "function") {
+      throw new TypeError("onAps: callback must be a function");
+    }
     const handler = (_event, data) => callback(data);
     ipcRenderer.on("scan:aps", handler);
     return () => ipcRenderer.removeListener("scan:aps", handler);
@@ -52,6 +55,9 @@ contextBridge.exposeInMainWorld("wscan", {
 
   /** Fired when the risk log changes (flagged APs only). */
   onRiskLog: (callback) => {
+    if (typeof callback !== "function") {
+      throw new TypeError("onRiskLog: callback must be a function");
+    }
     const handler = (_event, data) => callback(data);
     ipcRenderer.on("scan:risklog", handler);
     return () => ipcRenderer.removeListener("scan:risklog", handler);
@@ -59,6 +65,9 @@ contextBridge.exposeInMainWorld("wscan", {
 
   /** Fired when scanning starts, stops, or the interval changes. */
   onScanState: (callback) => {
+    if (typeof callback !== "function") {
+      throw new TypeError("onScanState: callback must be a function");
+    }
     const handler = (_event, data) => callback(data);
     ipcRenderer.on("scan:statechange", handler);
     return () => ipcRenderer.removeListener("scan:statechange", handler);
@@ -66,6 +75,9 @@ contextBridge.exposeInMainWorld("wscan", {
 
   /** Fired when an authenticated Android companion sends a scan payload. */
   onCompanionUpdate: (callback) => {
+    if (typeof callback !== "function") {
+      throw new TypeError("onCompanionUpdate: callback must be a function");
+    }
     const handler = (_event, data) => callback(data);
     ipcRenderer.on("companion:update", handler);
     return () => ipcRenderer.removeListener("companion:update", handler);
@@ -73,6 +85,9 @@ contextBridge.exposeInMainWorld("wscan", {
 
   /** Fired when the main process records a non-fatal error. */
   onAppError: (callback) => {
+    if (typeof callback !== "function") {
+      throw new TypeError("onAppError: callback must be a function");
+    }
     const handler = (_event, data) => callback(data);
     ipcRenderer.on("app:error", handler);
     return () => ipcRenderer.removeListener("app:error", handler);
