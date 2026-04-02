@@ -298,8 +298,8 @@ ipcMain.handle("companion:pair", async () => {
 });
 
 ipcMain.handle("companion:status", () => ({
-  running: companionServer !== null && companionServer.address() !== null,
-  address: companionServer?.address() ?? null,
+  running: companionServer !== null && companionServer.address !== null,
+  address: companionServer?.address ?? null,
   token: companionServer?.token ?? null,
 }));
 
