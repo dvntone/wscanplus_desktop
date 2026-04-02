@@ -508,13 +508,10 @@ async function init() {
   window.wscan.onAppError(appendLogEntry);
 
   // Load initial state
-  const [scanState, ifaceResult] = await Promise.all([
-    window.wscan.getScanState(),
-    window.wscan.getInterfaces(),
-  ]);
+  const scanState = await window.wscan.getScanState();
 
   updateScanControls(scanState);
-  await populateInterfaces(ifaceResult);
+  await populateInterfaces();
 }
 
 void init();
