@@ -22,6 +22,8 @@ import { CompanionServer } from "./companion-server.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const COMPANION_PACKAGE = "com.wscanplus.app";
 const COMPANION_PORT = parseInt(process.env.COMPANION_PORT ?? "47392", 10);
+// Localhost-only by default. Set COMPANION_HOST=0.0.0.0 only for explicit LAN opt-in.
+const COMPANION_HOST = process.env.COMPANION_HOST ?? "127.0.0.1";
 
 // --- ADB helpers (unchanged) ---
 
@@ -285,7 +287,7 @@ ipcMain.handle("companion:pair", async () => {
   const token = companionServer.generateToken();
 
   try {
-    const addr = await companionServer.start(COMPANION_PORT);
+    const addr = await companionServer.start(COMPANION_PORT, COMPANION_HOST);
     return { ok: true, token, address: addr };
   } catch (err) {
     return {
@@ -296,7 +298,7 @@ ipcMain.handle("companion:pair", async () => {
 });
 
 ipcMain.handle("companion:status", () => ({
-  running: companionServer?.address() !== null,
+  running: companionServer !== null && companionServer.address() !== null,
   address: companionServer?.address() ?? null,
   token: companionServer?.token ?? null,
 }));
@@ -306,7 +308,11 @@ ipcMain.handle("companion:status", () => ({
 let mainWindow = null;
 
 function pushToRenderer(channel, data) {
-  if (mainWindow?.webContents?.isDestroyed() === false) {
+  if (
+    mainWindow !== null &&
+    !mainWindow.isDestroyed() &&
+    !mainWindow.webContents.isDestroyed()
+  ) {
     mainWindow.webContents.send(channel, data);
   }
 }
@@ -349,4 +355,12 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+// Ensure cleanup runs regardless of quit path (SIGTERM, dock quit, etc.).
+// stopScanning() is synchronous; companion stop is fire-and-forget since
+// we cannot defer quit here without risking a hang.
+app.on("before-quit", () => {
+  stopScanning();
+  companionServer?.stop().catch(() => {});
 });

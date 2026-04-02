@@ -117,6 +117,7 @@ export class CompanionServer {
         if (
           msg.type !== "auth" ||
           !this.#token ||
+          typeof msg.token !== "string" ||
           msg.token !== this.#token
         ) {
           ws.close(1008, "Authentication failed");
@@ -150,7 +151,7 @@ export class CompanionServer {
     const { deviceId, sequence, timestamp, networks } = payload;
 
     if (typeof deviceId !== "string" || !deviceId) return false;
-    if (typeof sequence !== "number") return false;
+    if (!Number.isInteger(sequence)) return false;
     if (!Array.isArray(networks)) return false;
 
     // Reject stale timestamps
