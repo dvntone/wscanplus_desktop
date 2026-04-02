@@ -151,6 +151,13 @@ export class CompanionServer {
     const { deviceId, sequence, timestamp, networks } = payload;
 
     if (typeof deviceId !== "string" || !deviceId) return false;
+
+    // Rate limit before other checks — invalid payloads count against the limit
+    if (!this.#checkRateLimit(deviceId)) {
+      ws.close(1008, "Rate limit exceeded");
+      return false;
+    }
+
     if (!Number.isInteger(sequence)) return false;
     if (!Array.isArray(networks)) return false;
 
@@ -159,12 +166,6 @@ export class CompanionServer {
 
     // Enforce monotonic sequence
     if (!isSequenceMonotonic(deviceId, sequence, this.#sessions)) return false;
-
-    // Rate limit
-    if (!this.#checkRateLimit(deviceId)) {
-      ws.close(1008, "Rate limit exceeded");
-      return false;
-    }
 
     return true;
   }

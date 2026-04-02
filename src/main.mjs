@@ -263,17 +263,20 @@ ipcMain.handle("companion:pair", async () => {
     companionServer = new CompanionServer({
       onData: (payload) => {
         if (Array.isArray(payload.networks) && payload.networks.length > 0) {
-          const normalized = payload.networks.map((n) => ({
-            bssid: String(n.bssid ?? "").toLowerCase(),
-            ssid: String(n.ssid ?? ""),
-            signal: Number(n.rssi ?? n.signal ?? -100),
-            frequency: Number(n.frequency ?? 0),
-            channel: Number(n.channel ?? 0),
-            security: String(n.security ?? "open"),
-            source: "android",
-            deviceId: payload.deviceId,
-          }));
-          store.addAps(normalized);
+          const BSSID_RE = /^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i;
+          const normalized = payload.networks
+            .map((n) => ({
+              bssid: String(n.bssid ?? "").toLowerCase(),
+              ssid: String(n.ssid ?? ""),
+              signal: Number(n.rssi ?? n.signal ?? -100),
+              frequency: Number(n.frequency ?? 0),
+              channel: Number(n.channel ?? 0),
+              security: String(n.security ?? "open"),
+              source: "android",
+              deviceId: payload.deviceId,
+            }))
+            .filter((n) => BSSID_RE.test(n.bssid));
+          if (normalized.length > 0) store.addAps(normalized);
         }
         pushToRenderer("companion:update", {
           deviceId: payload.deviceId,
@@ -298,8 +301,8 @@ ipcMain.handle("companion:pair", async () => {
 });
 
 ipcMain.handle("companion:status", () => ({
-  running: companionServer !== null && companionServer.address() !== null,
-  address: companionServer?.address() ?? null,
+  running: companionServer !== null && companionServer.address !== null,
+  address: companionServer?.address ?? null,
   token: companionServer?.token ?? null,
 }));
 

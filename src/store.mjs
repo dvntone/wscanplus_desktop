@@ -44,11 +44,11 @@ class Store extends EventEmitter {
       (e) => now - e.ts < RISK_LOG_TTL_MS,
     );
 
-    // Upsert by dedupe key: bssid + severity
+    // Upsert by dedupe key: bssid only (one entry per AP)
     for (const entry of entries) {
-      const key = `${entry.bssid}:${entry.severity}`;
+      const key = entry.bssid;
       const idx = this.#state.riskLog.findIndex(
-        (e) => `${e.bssid}:${e.severity}` === key,
+        (e) => e.bssid === key,
       );
       if (idx >= 0) {
         this.#state.riskLog[idx] = { ...entry, ts: now };

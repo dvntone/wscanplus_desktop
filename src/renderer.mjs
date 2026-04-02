@@ -90,8 +90,7 @@ async function manualScan() {
   }
 }
 
-async function populateInterfaces() {
-  const result = await window.wscan.getInterfaces();
+function populateInterfaces(result) {
   if (!result.ok || result.interfaces.length === 0) return;
   const sel = document.getElementById("iface-select");
   for (const iface of result.interfaces) {
@@ -198,8 +197,8 @@ function buildApRow(ap, risk) {
 function handleRiskLog(log) {
   riskMap.clear();
   for (const entry of log) riskMap.set(entry.bssid, entry);
-  document.getElementById("threat-count").textContent = log.length;
   const badge = document.getElementById("threat-count");
+  badge.textContent = riskMap.size;
   if (log.length > 0) {
     badge.classList.add("badge-danger");
   } else {
