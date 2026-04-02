@@ -28,7 +28,11 @@ export function isSequenceMonotonic(deviceId, sequence, sessions) {
 }
 
 function newSession() {
-  return { sequence: -1, rateCount: 0, rateWindowStart: Date.now() };
+  return { sequence: -1 };
+}
+
+function newRateBucket() {
+  return { rateCount: 0, rateWindowStart: Date.now() };
 }
 
 /**
@@ -44,6 +48,7 @@ function newSession() {
 export class CompanionServer {
   #token = null;
   #sessions = new Map();
+  #rateLimiter = new Map();
   #httpServer = null;
   #wss = null;
   #onData = null;
@@ -58,6 +63,8 @@ export class CompanionServer {
    */
   generateToken() {
     this.#token = randomBytes(16).toString("hex");
+    this.#sessions.clear();
+    this.#rateLimiter.clear();
     return this.#token;
   }
 
@@ -77,17 +84,43 @@ export class CompanionServer {
   start(port = 0, host = "127.0.0.1") {
     if (this.#httpServer) return Promise.resolve(this.address);
     return new Promise((resolve, reject) => {
-      this.#httpServer = createServer();
-      this.#wss = new WebSocketServer({ server: this.#httpServer });
-      this.#wss.on("connection", (ws) => this.#handleConnection(ws));
-      this.#httpServer.on("error", reject);
-      this.#httpServer.listen(port, host, () => resolve(this.address));
+      const httpServer = createServer();
+      const wss = new WebSocketServer({ server: httpServer });
+      wss.on("connection", (ws) => this.#handleConnection(ws));
+
+      const onError = (err) => {
+        httpServer.off("error", onError);
+        wss.off("error", onError);
+        try {
+          wss.close();
+        } catch {
+          // ignore close errors
+        }
+        try {
+          httpServer.close();
+        } catch {
+          // ignore close errors
+        }
+        reject(err);
+      };
+
+      httpServer.on("error", onError);
+      wss.on("error", onError);
+      httpServer.listen(port, host, () => {
+        httpServer.off("error", onError);
+        wss.off("error", onError);
+        this.#httpServer = httpServer;
+        this.#wss = wss;
+        resolve(this.address);
+      });
     });
   }
 
   stop() {
     return new Promise((resolve) => {
       if (!this.#httpServer) {
+        this.#sessions.clear();
+        this.#rateLimiter.clear();
         resolve();
         return;
       }
@@ -95,6 +128,8 @@ export class CompanionServer {
       this.#httpServer.close(() => {
         this.#httpServer = null;
         this.#wss = null;
+        this.#sessions.clear();
+        this.#rateLimiter.clear();
         resolve();
       });
     });
@@ -130,7 +165,17 @@ export class CompanionServer {
 
       if (msg.type !== "scan") return;
 
-      if (!this.#validatePayload(ws, msg.payload)) return;
+      const rateKey =
+        msg.payload && typeof msg.payload.deviceId === "string" && msg.payload.deviceId
+          ? msg.payload.deviceId
+          : ws;
+
+      if (!this.#checkRateLimit(rateKey)) {
+        ws.close(1008, "Rate limit exceeded");
+        return;
+      }
+
+      if (!this.#validatePayload(msg.payload)) return;
 
       const { deviceId, sequence } = msg.payload;
       const session = this.#sessions.get(deviceId) ?? newSession();
@@ -143,9 +188,13 @@ export class CompanionServer {
     ws.on("error", () => {
       /* connection close is handled by the 'close' event */
     });
+
+    ws.on("close", () => {
+      this.#rateLimiter.delete(ws);
+    });
   }
 
-  #validatePayload(ws, payload) {
+  #validatePayload(payload) {
     if (!payload || typeof payload !== "object") return false;
 
     const { deviceId, sequence, timestamp, networks } = payload;
@@ -160,27 +209,21 @@ export class CompanionServer {
     // Enforce monotonic sequence
     if (!isSequenceMonotonic(deviceId, sequence, this.#sessions)) return false;
 
-    // Rate limit
-    if (!this.#checkRateLimit(deviceId)) {
-      ws.close(1008, "Rate limit exceeded");
-      return false;
-    }
-
     return true;
   }
 
-  #checkRateLimit(deviceId) {
-    const session = this.#sessions.get(deviceId) ?? newSession();
+  #checkRateLimit(key) {
+    const bucket = this.#rateLimiter.get(key) ?? newRateBucket();
     const now = Date.now();
 
-    if (now - session.rateWindowStart > RATE_LIMIT_WINDOW_MS) {
-      session.rateCount = 0;
-      session.rateWindowStart = now;
+    if (now - bucket.rateWindowStart > RATE_LIMIT_WINDOW_MS) {
+      bucket.rateCount = 0;
+      bucket.rateWindowStart = now;
     }
 
-    session.rateCount += 1;
-    this.#sessions.set(deviceId, session);
+    bucket.rateCount += 1;
+    this.#rateLimiter.set(key, bucket);
 
-    return session.rateCount <= RATE_LIMIT_PER_WINDOW;
+    return bucket.rateCount <= RATE_LIMIT_PER_WINDOW;
   }
 }

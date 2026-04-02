@@ -24,6 +24,15 @@ const COMPANION_PACKAGE = "com.wscanplus.app";
 const COMPANION_PORT = parseInt(process.env.COMPANION_PORT ?? "47392", 10);
 // Localhost-only by default. Set COMPANION_HOST=0.0.0.0 only for explicit LAN opt-in.
 const COMPANION_HOST = process.env.COMPANION_HOST ?? "127.0.0.1";
+const BSSID_REGEX = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+
+const isValidBssid = (bssid) =>
+  typeof bssid === "string" && BSSID_REGEX.test(bssid);
+
+const toFiniteNumber = (value, defaultValue) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : defaultValue;
+};
 
 // --- ADB helpers (unchanged) ---
 
@@ -263,17 +272,26 @@ ipcMain.handle("companion:pair", async () => {
     companionServer = new CompanionServer({
       onData: (payload) => {
         if (Array.isArray(payload.networks) && payload.networks.length > 0) {
-          const normalized = payload.networks.map((n) => ({
-            bssid: String(n.bssid ?? "").toLowerCase(),
-            ssid: String(n.ssid ?? ""),
-            signal: Number(n.rssi ?? n.signal ?? -100),
-            frequency: Number(n.frequency ?? 0),
-            channel: Number(n.channel ?? 0),
-            security: String(n.security ?? "open"),
-            source: "android",
-            deviceId: payload.deviceId,
-          }));
-          store.addAps(normalized);
+          const normalized = payload.networks
+            .map((n) => {
+              const rawBssid = String(n.bssid ?? "").trim().toLowerCase();
+              if (!isValidBssid(rawBssid)) return null;
+
+              return {
+                bssid: rawBssid,
+                ssid: String(n.ssid ?? ""),
+                signal: toFiniteNumber(n.rssi ?? n.signal, -100),
+                frequency: toFiniteNumber(n.frequency, 0),
+                channel: toFiniteNumber(n.channel, 0),
+                security: String(n.security ?? "open"),
+                source: "android",
+                deviceId: payload.deviceId,
+              };
+            })
+            .filter((ap) => ap !== null);
+          if (normalized.length > 0) {
+            store.addAps(normalized);
+          }
         }
         pushToRenderer("companion:update", {
           deviceId: payload.deviceId,

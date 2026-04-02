@@ -1,5 +1,7 @@
 import { EventEmitter } from "node:events";
 
+const APS_MAX = 2000;
+const APS_TTL_MS = 10 * 60_000; // 10 minutes
 const RISK_LOG_MAX = 1000;
 const RISK_LOG_TTL_MS = 60_000;
 
@@ -30,9 +32,29 @@ class Store extends EventEmitter {
 
   addAps(newAps) {
     const now = Date.now();
+
+    // Drop stale APs to keep memory bounded and avoid sending long-dead entries.
+    for (const [bssid, ap] of this.#state.aps) {
+      if (now - ap.lastSeen > APS_TTL_MS) {
+        this.#state.aps.delete(bssid);
+      }
+    }
+
     for (const ap of newAps) {
       this.#state.aps.set(ap.bssid, { ...ap, lastSeen: now });
     }
+
+    // Enforce a hard cap; evict the oldest entries first.
+    if (this.#state.aps.size > APS_MAX) {
+      const sorted = Array.from(this.#state.aps.entries()).sort(
+        (a, b) => a[1].lastSeen - b[1].lastSeen,
+      );
+      while (sorted.length > APS_MAX) {
+        const [oldestBssid] = sorted.shift();
+        this.#state.aps.delete(oldestBssid);
+      }
+    }
+
     this.emit("aps", Array.from(this.#state.aps.values()));
   }
 
@@ -44,23 +66,24 @@ class Store extends EventEmitter {
       (e) => now - e.ts < RISK_LOG_TTL_MS,
     );
 
-    // Upsert by dedupe key: bssid + severity
+    // Upsert by BSSID (latest severity wins)
+    const existing = new Map(
+      this.#state.riskLog.map((entry) => [entry.bssid, entry]),
+    );
+
     for (const entry of entries) {
-      const key = `${entry.bssid}:${entry.severity}`;
-      const idx = this.#state.riskLog.findIndex(
-        (e) => `${e.bssid}:${e.severity}` === key,
-      );
-      if (idx >= 0) {
-        this.#state.riskLog[idx] = { ...entry, ts: now };
-      } else {
-        this.#state.riskLog.push({ ...entry, ts: now });
-      }
+      existing.set(entry.bssid, { ...entry, ts: now });
     }
 
-    // Enforce max bound
-    if (this.#state.riskLog.length > RISK_LOG_MAX) {
-      this.#state.riskLog = this.#state.riskLog.slice(-RISK_LOG_MAX);
-    }
+    const deduped = Array.from(existing.values()).sort(
+      (a, b) => a.ts - b.ts,
+    );
+
+    // Enforce max bound (keep most recent)
+    this.#state.riskLog =
+      deduped.length > RISK_LOG_MAX
+        ? deduped.slice(-RISK_LOG_MAX)
+        : deduped;
 
     this.emit("riskLog", this.#state.riskLog);
   }

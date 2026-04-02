@@ -182,6 +182,20 @@ export function freqToChannel(freqMHz) {
 let activeScanPromise = null;
 let scanLoopTimer = null;
 
+export function processScanResults(aps) {
+  if (aps.length === 0) return aps;
+
+  const baseline = new Map(store.state.aps);
+  store.addAps(aps);
+  const flagged = scoreAPs(aps, baseline).filter(
+    (e) => e.severity !== "info",
+  );
+  if (flagged.length > 0) {
+    store.addRiskEntries(flagged);
+  }
+  return aps;
+}
+
 async function runScanAndProcess() {
   const iface = store.state.interface;
   if (!iface) {
@@ -190,18 +204,7 @@ async function runScanAndProcess() {
 
   const raw = await runCommand("iw", ["dev", iface, "scan"]);
   const aps = parseScanOutput(raw);
-
-  if (aps.length > 0) {
-    store.addAps(aps);
-    const flagged = scoreAPs(aps, store.state.aps).filter(
-      (e) => e.severity !== "info",
-    );
-    if (flagged.length > 0) {
-      store.addRiskEntries(flagged);
-    }
-  }
-
-  return aps;
+  return processScanResults(aps);
 }
 
 /**

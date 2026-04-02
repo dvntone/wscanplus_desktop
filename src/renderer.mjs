@@ -198,9 +198,10 @@ function buildApRow(ap, risk) {
 function handleRiskLog(log) {
   riskMap.clear();
   for (const entry of log) riskMap.set(entry.bssid, entry);
-  document.getElementById("threat-count").textContent = log.length;
+  const threatCount = riskMap.size;
+  document.getElementById("threat-count").textContent = threatCount;
   const badge = document.getElementById("threat-count");
-  if (log.length > 0) {
+  if (threatCount > 0) {
     badge.classList.add("badge-danger");
   } else {
     badge.classList.remove("badge-danger");
